@@ -55,7 +55,6 @@ body:
     attributes:
       label: Preconditions
       description: Mention required user roles, authentication, or setup.
-      render: text
 
   - type: textarea
     id: steps
