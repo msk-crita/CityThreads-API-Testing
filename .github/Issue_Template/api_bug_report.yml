@@ -1,0 +1,125 @@
+
+name: API Bug Report
+description: Report a defect identified during City Threads API testing.
+title: "[API BUG] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## City Threads API Defect Report
+        Report reproducible API defects. Never include passwords,
+        access tokens, refresh tokens, or other sensitive information.
+
+  - type: input
+    id: test_case
+    attributes:
+      label: Test Case ID
+      placeholder: AUTH-LOGIN-002
+    validations:
+      required: true
+
+  - type: dropdown
+    id: controller
+    attributes:
+      label: Controller
+      options:
+        - Auth Controller
+        - User Controller
+        - Product Info Controller
+        - Product Controller
+        - Shade Controller
+    validations:
+      required: true
+
+  - type: input
+    id: endpoint
+    attributes:
+      label: API Endpoint
+      placeholder: POST /api/auth/login
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Test
+        - Staging
+        - Production
+    validations:
+      required: true
+
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: Preconditions
+      description: Mention required user roles, authentication, or setup.
+      render: text
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Open Bruno.
+        2. Select the City Threads environment.
+        3. Execute the request.
+        4. Observe the response.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+      description: Describe the expected behavior based on the API contract.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+      description: Describe what the API actually returned.
+    validations:
+      required: true
+
+  - type: input
+    id: http_status
+    attributes:
+      label: Actual HTTP Status Code
+      placeholder: "401"
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: request
+    attributes:
+      label: Sanitized Request
+      description: Include request body and headers. Redact credentials.
+      render: json
+
+  - type: textarea
+    id: response
+    attributes:
+      label: Sanitized Actual Response
+      description: Include the actual API response with tokens and sensitive data redacted.
+      render: json
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional Evidence
+      description: Attach screenshots or relevant execution logs.
