@@ -2,8 +2,9 @@
 name: API Bug Report
 about: Report reproducible defects identified during City Threads API testing.
 title: "[API BUG]"
-labels: ''
+labels: api-bug
 assignees: ''
+type: Bug
 
 ---
 
