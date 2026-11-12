@@ -2,7 +2,6 @@
 name: API Bug Report
 description: Report a defect identified during City Threads API testing.
 title: "[API BUG] "
-labels: []
 body:
   - type: markdown
     attributes:
