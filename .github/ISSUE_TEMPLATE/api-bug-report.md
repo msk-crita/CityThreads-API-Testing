@@ -4,7 +4,6 @@ about: Report reproducible defects identified during City Threads API testing.
 title: "[API BUG]"
 labels: api-bug
 assignees: ''
-type: Bug
 
 ---
 
