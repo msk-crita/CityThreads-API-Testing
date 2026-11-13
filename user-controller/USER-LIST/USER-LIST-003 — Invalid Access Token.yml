@@ -1,0 +1,68 @@
+info:
+  name: USER-LIST-003 — Invalid Access Token
+  type: http
+  seq: 3
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+    - name: size
+      value: "20"
+      type: query
+  auth:
+    type: bearer
+    token: invalid.token.value
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("USER-LIST-003: Invalid access token is rejected", function () {
+            expect(res.status).to.equal(401);
+        });
+
+        test("USER-LIST-003: Success flag is false", function () {
+            expect(res.body.success).to.equal(false);
+        });
+
+        test("USER-LIST-003: Authentication error notification is returned", function () {
+            expect(res.body.notification).to.be.an("object");
+            expect(res.body.notification.exception).to.equal(true);
+            expect(res.body.notification.exceptionMessage)
+                .to.be.a("string").and.not.empty;
+        });
+
+        test("USER-LIST-003: Error response does not expose stack trace", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /stacktrace|stack trace|at\s+[\w.$]+\s*\(|Caused by:|Exception in thread/gi
+            );
+        });
+
+        test("USER-LIST-003: Error response does not expose credentials or tokens", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /password|access_token|refresh_token|challenge_token/gi
+            );
+        });
+
+        test("USER-LIST-003: Response statusCode is 401", function () {
+            expect(res.body.statusCode).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

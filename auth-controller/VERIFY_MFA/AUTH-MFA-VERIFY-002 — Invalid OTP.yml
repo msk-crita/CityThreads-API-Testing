@@ -1,0 +1,58 @@
+info:
+  name: AUTH-MFA-VERIFY-002 — Invalid OTP
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/mfa/verify"
+  body:
+    type: json
+    data: |-
+      {
+        "challenge_token": "{{challengeToken}}",
+        "otp": "000000",
+        "client_type": "browser",
+        "device_label": "DELL"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("AUTH-MFA-VERIFY-002: Invalid OTP is rejected", function () {
+            expect(res.status).to.be.within(400, 499);
+        });
+
+        test("AUTH-MFA-VERIFY-002: Success flag is false", function () {
+            expect(res.body.success).to.equal(false);
+        });
+
+        test("AUTH-MFA-VERIFY-002: Error notification is returned", function () {
+            expect(res.body.notification).to.be.an("object");
+            expect(res.body.notification.exception).to.equal(true);
+            expect(res.body.notification.exceptionMessage)
+                .to.be.a("string").and.not.empty;
+        });
+
+        test("AUTH-MFA-VERIFY-002: Error response does not expose stack trace", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /stacktrace|stack trace|at\s+[\w.$]+\s*\(|Caused by:|Exception in thread/gi
+            );
+        });
+
+        test("AUTH-MFA-VERIFY-002: Error response does not expose sensitive credentials or tokens", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /password|access_token|refresh_token|challenge_token/gi
+            );
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

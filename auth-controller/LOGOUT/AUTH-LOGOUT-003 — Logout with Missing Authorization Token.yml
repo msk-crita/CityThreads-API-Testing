@@ -1,0 +1,61 @@
+info:
+  name: AUTH-LOGOUT-003 — Logout with Missing Authorization Token
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/logout"
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": ""
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("AUTH-LOGOUT-003: Logout without authorization token is rejected", function () {
+            expect(res.status).to.equal(401);
+
+            expect(res.body).to.be.an("object");
+
+            expect(res.body.success).to.equal(false);
+        });
+
+        test("AUTH-LOGOUT-003: Authentication failure notification is returned", function () {
+            expect(res.body.notification).to.be.an("object");
+
+            expect(res.body.notification.exception).to.equal(true);
+        });
+
+        test("AUTH-LOGOUT-003: Response contains an appropriate authentication error", function () {
+            expect(res.body.notification.exceptionMessage).to.match(
+                /unauthorized|authentication required|access token required|missing token/i
+            );
+        });
+
+        test("AUTH-LOGOUT-003: Response does not expose stack trace", function () {
+            const responseText = JSON.stringify(res.body);
+
+            expect(responseText).to.not.match(
+                /stacktrace|stack trace|at\s+[\w.$]+\s*\(|Caused by:|Exception in thread/gi
+            );
+        });
+
+        test("AUTH-LOGOUT-003: Response does not expose sensitive credentials or tokens", function () {
+            const responseText = JSON.stringify(res.body);
+
+            expect(responseText).to.not.match(
+                /password|access_token|refresh_token|challenge_token/gi
+            );
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

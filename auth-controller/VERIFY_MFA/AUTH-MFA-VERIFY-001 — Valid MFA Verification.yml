@@ -1,0 +1,151 @@
+info:
+  name: AUTH-MFA-VERIFY-001 — Valid MFA Verification
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/mfa/verify"
+  body:
+    type: json
+    data: |-
+      {
+        "challenge_token": "{{challengeToken}}",
+        "otp": "371249",
+        "client_type": "browser",
+        "device_label": "DELL"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        // Capture Access Token
+        if (res.body?.data?.access_token) {
+            bru.setVar("accessToken", res.body.data.access_token);
+            console.log("Access token captured successfully");
+        } else {
+            console.log("No access token returned");
+        }
+
+        // Capture Refresh Token
+        if (res.body?.data?.refresh_token) {
+            bru.setVar("refreshToken", res.body.data.refresh_token);
+            console.log("Refresh token captured successfully");
+        } else {
+            console.log("No refresh token returned");
+        }
+
+        // Capture Challenge Token
+        if (res.body?.data?.challenge_token) {
+            bru.setVar("challengeToken", res.body.data.challenge_token);
+            console.log("Challenge token captured successfully");
+        } else {
+            console.log("No challenge token returned");
+        }
+    - type: tests
+      code: |-
+        // 1. HTTP Status Validation
+        test("AUTH-MFA-VERIFY-001: HTTP status is 200", function () {
+            expect(res.status).to.equal(200);
+        });
+
+        // 2. Response Structure
+        test("AUTH-MFA-VERIFY-001: Response is a valid object", function () {
+            expect(res.body).to.be.an("object");
+        });
+
+        // 3. Success Validation
+        test("AUTH-MFA-VERIFY-001: Authentication is successful", function () {
+            expect(res.body.success).to.equal(true);
+        });
+
+        // 4. Notification Validation
+        test("AUTH-MFA-VERIFY-001: Notification object is present", function () {
+            expect(res.body.notification).to.be.an("object");
+        });
+
+        test("AUTH-MFA-VERIFY-001: Exception flag is false", function () {
+            expect(res.body.notification.exception).to.equal(false);
+        });
+
+        test("AUTH-MFA-VERIFY-001: Success message is returned", function () {
+            expect(res.body.notification.exceptionMessage)
+                .to.equal("Authentication step completed.");
+        });
+
+        // 5. Data Object Validation
+        test("AUTH-MFA-VERIFY-001: Data object is present", function () {
+            expect(res.body.data).to.be.an("object");
+        });
+
+        // 6. Access Token Validation
+        test("AUTH-MFA-VERIFY-001: Access token is returned", function () {
+            expect(res.body.data.access_token).to.be.a("string").and.not.empty;
+        });
+
+        test("AUTH-MFA-VERIFY-001: Token type is Bearer", function () {
+            expect(res.body.data.token_type).to.equal("Bearer");
+        });
+
+        // 7. Token Expiry Validation
+        test("AUTH-MFA-VERIFY-001: Token expiry is valid", function () {
+            expect(res.body.data.expires_in).to.be.a("number");
+            expect(res.body.data.expires_in).to.be.greaterThan(0);
+        });
+
+        // 8. Challenge Token Validation
+        test("AUTH-MFA-VERIFY-001: Challenge token is cleared after verification", function () {
+            expect(res.body.data.challenge_token).to.equal(null);
+        });
+
+        // 9. MFA Purpose Validation
+        test("AUTH-MFA-VERIFY-001: MFA purpose is cleared after verification", function () {
+            expect(res.body.data.mfa_purpose).to.equal(null);
+        });
+
+        // 10. Refresh Token Validation
+        test("AUTH-MFA-VERIFY-001: Refresh token field is present", function () {
+            expect(res.body.data).to.have.property("refresh_token");
+        });
+
+        // 11. Role Validation
+        test("AUTH-MFA-VERIFY-001: Role code is returned", function () {
+            expect(res.body.data.role_code).to.be.a("string").and.not.empty;
+        });
+
+        // 12. Authentication Status
+        test("AUTH-MFA-VERIFY-001: Authentication status is AUTHENTICATED", function () {
+            expect(res.body.data.status).to.equal("AUTHENTICATED");
+        });
+
+        // 13. Platform Validation
+        test("AUTH-MFA-VERIFY-001: Platform is returned", function () {
+            expect(res.body.data.platform).to.be.a("string").and.not.empty;
+        });
+
+        // 14. Permissions Validation
+        test("AUTH-MFA-VERIFY-001: Permissions object is returned", function () {
+            expect(res.body.data.permissions).to.be.an("object");
+        });
+
+        // 15. Response Status Code Field
+        test("AUTH-MFA-VERIFY-001: Response statusCode is 200", function () {
+            expect(res.body.statusCode).to.equal(200);
+        });
+
+        // 16. Response Timestamp
+        test("AUTH-MFA-VERIFY-001: Response timestamp is valid", function () {
+            expect(res.body.responseTime).to.be.a("string");
+            expect(Date.parse(res.body.responseTime)).to.not.be.NaN;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

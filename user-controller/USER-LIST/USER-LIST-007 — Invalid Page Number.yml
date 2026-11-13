@@ -1,0 +1,64 @@
+info:
+  name: USER-LIST-007 — Invalid Page Number
+  type: http
+  seq: 6
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users?page=-1&size=2"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "-1"
+      type: query
+    - name: size
+      value: "2"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("USER-LIST-007: Invalid page number does not cause server error", function () {
+            expect(res.status).to.be.within(400, 499);
+        });
+
+        test("USER-LIST-007: Success flag is false", function () {
+            expect(res.body.success).to.equal(false);
+        });
+
+        test("USER-LIST-007: Error notification is returned", function () {
+            expect(res.body.notification).to.be.an("object");
+            expect(res.body.notification.exception).to.equal(true);
+            expect(res.body.notification.exceptionMessage)
+                .to.be.a("string").and.not.empty;
+        });
+
+        test("USER-LIST-007: Error response does not expose stack trace", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /stacktrace|stack trace|at\s+[\w.$]+\s*\(|Caused by:|Exception in thread/gi
+            );
+        });
+
+        test("USER-LIST-007: Error response does not expose sensitive credentials or tokens", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /password|access_token|refresh_token|challenge_token/gi
+            );
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

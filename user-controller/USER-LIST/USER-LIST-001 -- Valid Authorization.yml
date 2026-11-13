@@ -1,0 +1,130 @@
+info:
+  name: USER-LIST-001 -- Valid Authorization
+  type: http
+  seq: 1
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+    - name: size
+      value: "20"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // 1. HTTP Status Validation
+        test("USER-LIST-001: HTTP status is 200", function () {
+            expect(res.status).to.equal(200);
+        });
+
+        // 2. Response Structure
+        test("USER-LIST-001: Response is a valid object", function () {
+            expect(res.body).to.be.an("object");
+        });
+
+        // 3. Success Validation
+        test("USER-LIST-001: Success flag is true", function () {
+            expect(res.body.success).to.equal(true);
+        });
+
+        // 4. Notification Validation
+        test("USER-LIST-001: Notification is returned successfully", function () {
+            expect(res.body.notification).to.be.an("object");
+            expect(res.body.notification.exception).to.equal(false);
+            expect(res.body.notification.exceptionMessage)
+                .to.equal("Users retrieved successfully");
+        });
+
+        // 5. User List Validation
+        test("USER-LIST-001: User content is returned as an array", function () {
+            expect(res.body.data.content).to.be.an("array");
+            expect(res.body.data.content.length).to.be.greaterThan(0);
+        });
+
+        // 6. User Details Validation
+        test("USER-LIST-001: Each user contains required fields", function () {
+            res.body.data.content.forEach(function (user) {
+                expect(user.id).to.exist;
+                expect(user.username).to.be.a("string").and.not.empty;
+                expect(user.email).to.be.a("string").and.not.empty;
+                expect(user.first_name).to.be.a("string").and.not.empty;
+                expect(user.last_name).to.be.a("string").and.not.empty;
+                expect(user.role_id).to.exist;
+                expect(user.role_name).to.be.a("string").and.not.empty;
+                expect(user.role_code).to.be.a("string").and.not.empty;
+                expect(user.status).to.be.a("string").and.not.empty;
+            });
+        });
+
+        // 7. Optional Fields Validation
+        test("USER-LIST-001: Optional fields allow null values", function () {
+            res.body.data.content.forEach(function (user) {
+                expect(user).to.have.property("phone");
+                expect(user).to.have.property("job_title");
+            });
+        });
+
+        // 8. User Status Validation
+        test("USER-LIST-001: User status contains valid values", function () {
+            res.body.data.content.forEach(function (user) {
+                expect(user.status).to.be.oneOf(["active", "inactive"]);
+            });
+        });
+
+        // 9. Timestamp Validation
+        test("USER-LIST-001: User timestamps are valid", function () {
+            res.body.data.content.forEach(function (user) {
+                expect(Date.parse(user.created_at)).to.not.be.NaN;
+                expect(Date.parse(user.updated_at)).to.not.be.NaN;
+            });
+        });
+
+        // 10. Pagination Validation
+        test("USER-LIST-001: Pagination details are valid", function () {
+            expect(res.body.data.number).to.be.a("number");
+            expect(res.body.data.size).to.be.a("number");
+            expect(res.body.data.totalElements).to.be.a("number");
+            expect(res.body.data.totalPages).to.be.a("number");
+            expect(res.body.data.numberOfElements)
+                .to.equal(res.body.data.content.length);
+        });
+
+        // 11. Pagination Flags Validation
+        test("USER-LIST-001: Pagination flags are returned", function () {
+            expect(res.body.data.first).to.be.a("boolean");
+            expect(res.body.data.last).to.be.a("boolean");
+            expect(res.body.data.empty).to.be.a("boolean");
+        });
+
+        // 12. Response Status Code
+        test("USER-LIST-001: Response statusCode is 200", function () {
+            expect(res.body.statusCode).to.equal(200);
+        });
+
+        // 13. Response Timestamp
+        test("USER-LIST-001: Response timestamp is valid", function () {
+            expect(res.body.responseTime).to.be.a("string");
+            expect(Date.parse(res.body.responseTime)).to.not.be.NaN;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

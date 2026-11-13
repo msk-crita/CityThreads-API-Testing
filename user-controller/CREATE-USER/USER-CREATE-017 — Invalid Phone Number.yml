@@ -1,0 +1,115 @@
+info:
+  name: USER-CREATE-017 — Invalid Phone Number
+  type: http
+  seq: 17
+  tags:
+    - user-controller
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/admin/users"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "{{testUsername}}",
+        "email": "{{testEmail}}",
+        "phone": "invalid-phone",
+        "password": "{{testPassword}}",
+        "status": "{{testStatus}}",
+        "first_name": "{{testFirstName}}",
+        "last_name": "{{testLastName}}",
+        "job_title": "{{testJobTitle}}",
+        "role_id": {{testRoleId}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Get the previous counter from the active environment
+        let counter = Number(bru.getEnvVar("testUserCounter") || 0);
+
+        // Increment for every request execution
+        counter++;
+
+        // Save the updated counter
+        bru.setEnvVar("testUserCounter", String(counter));
+
+        // Generate username and email with 3-digit numbering
+        const uniqueId = String(counter).padStart(3, "0");
+        bru.setVar("testUsername", `bruno.test.user${uniqueId}`);
+        // Reuse the email address from USER-CREATE-001
+        bru.setVar("testEmail", `bruno.test.user${uniqueId}@example.com`);
+
+        // Set remaining test data
+        bru.setVar("testPhone", "9876543210");
+        bru.setVar("testPassword", "Password@123");
+        bru.setVar("testStatus", "active");
+        bru.setVar("testFirstName", "Bruno");
+        bru.setVar("testLastName", "Test");
+        bru.setVar("testJobTitle", "QA Engineer");
+        bru.setVar("testRoleId", "2");
+
+        console.log("Create User test data prepared");
+        console.log("Username:", bru.getVar("testUsername"));
+        console.log("Email:", bru.getVar("testEmail"));
+    - type: tests
+      code: |-
+        const responseText = JSON.stringify(res.body);
+
+        test("User is created successfully", function () {
+            expect(res.status).to.eql(201);
+        });
+
+        test("Success flag is true", function () {
+            expect(res.body.success).to.eql(true);
+        });
+
+        test("Notification indicates no exception", function () {
+            expect(res.body.notification.exception).to.eql(false);
+        });
+
+        test("Success message is provided", function () {
+            expect(res.body.notification.exceptionMessage)
+                .to.eql("User created successfully");
+        });
+
+        test("Created user data is returned", function () {
+            expect(res.body.data).to.be.an("object");
+        });
+
+        test("Username matches the request", function () {
+            expect(res.body.data.username)
+                .to.eql(bru.getVar("testUsername"));
+        });
+
+        test("Email matches the request", function () {
+            expect(res.body.data.email)
+                .to.eql(bru.getVar("testEmail"));
+        });
+
+        test("User creation succeeds without providing phone", function () {
+            expect(res.status).to.eql(201);
+            expect(res.body.success).to.eql(true);
+        });
+
+        test("Response status code matches HTTP status", function () {
+            expect(res.body.statusCode).to.eql(res.status);
+        });
+
+        test("Successful response does not expose stack trace", function () {
+            expect(responseText).not.to.match(
+                /stackTrace|at\s+[\w.$]+\(|org\.springframework|org\.apache\.catalina/i
+            );
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

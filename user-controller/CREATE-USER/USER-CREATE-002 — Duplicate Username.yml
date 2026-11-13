@@ -1,0 +1,95 @@
+info:
+  name: USER-CREATE-002 — Duplicate Username
+  type: http
+  seq: 2
+  tags:
+    - user-controller
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/admin/users"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "{{testUsername}}",
+        "email": "{{testEmail}}",
+        "phone": "{{testPhone}}",
+        "password": "{{testPassword}}",
+        "status": "{{testStatus}}",
+        "first_name": "{{testFirstName}}",
+        "last_name": "{{testLastName}}",
+        "job_title": "{{testJobTitle}}",
+        "role_id": {{testRoleId}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Get the previous counter from the active environment
+        let counter = Number(bru.getEnvVar("testUserCounter") || 0);
+
+        // Increment for every request execution
+        counter++;
+
+        // Save the updated counter
+        bru.setEnvVar("testUserCounter", String(counter));
+
+        // Generate username and email with 3-digit numbering
+        const uniqueId = String(counter).padStart(3, "0");
+        // Force duplicate username for this test
+        bru.setVar("testUsername", "bruno.test.user001");
+        bru.setVar("testEmail", `bruno.test.user${uniqueId}@example.com`);
+
+        // Set remaining test data
+        bru.setVar("testPhone", "9876543210");
+        bru.setVar("testPassword", "Password@123");
+        bru.setVar("testStatus", "active");
+        bru.setVar("testFirstName", "Bruno");
+        bru.setVar("testLastName", "Test");
+        bru.setVar("testJobTitle", "QA Engineer");
+        bru.setVar("testRoleId", "2");
+
+        console.log("Create User test data prepared");
+        console.log("Username:", bru.getVar("testUsername"));
+        console.log("Email:", bru.getVar("testEmail"));
+    - type: tests
+      code: |-
+        const body = res.body;
+        const responseText = JSON.stringify(body);
+
+        test("Duplicate username is rejected", function () {
+            expect([400, 409]).to.include(res.status);
+        });
+
+        test("Response indicates failure", function () {
+            expect(body.success).to.equal(false);
+            expect(body.notification?.exception).to.equal(true);
+        });
+
+        test("Error message is provided", function () {
+            expect(body.notification?.exceptionMessage).to.be.a("string").and.not.empty;
+        });
+
+        test("No stack trace is exposed", function () {
+            expect(responseText).to.not.match(/stacktrace|stack trace|at\s+[\w.$]+\(/i);
+        });
+
+        test("No sensitive information is exposed", function () {
+            expect(responseText).to.not.match(/password|access_token|refresh_token|challenge_token/gi);
+        });
+
+        test("Response statusCode matches HTTP status", function () {
+            expect(body.statusCode).to.equal(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

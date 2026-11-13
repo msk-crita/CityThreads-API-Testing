@@ -1,0 +1,71 @@
+info:
+  name: "USER-LIST-006 — Pagination: Next Page"
+  type: http
+  seq: 5
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users?page=1&size=2"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "1"
+      type: query
+    - name: size
+      value: "2"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("USER-LIST-006: HTTP status is 200", function () {
+            expect(res.status).to.equal(200);
+        });
+
+        test("USER-LIST-006: Request is successful", function () {
+            expect(res.body.success).to.equal(true);
+            expect(res.body.notification.exception).to.equal(false);
+        });
+
+        test("USER-LIST-006: Second page is returned", function () {
+            expect(res.body.data.number).to.equal(1);
+            expect(res.body.data.first).to.equal(false);
+        });
+
+        test("USER-LIST-006: Requested page size is respected", function () {
+            expect(res.body.data.size).to.equal(2);
+        });
+
+        test("USER-LIST-006: Returned users do not exceed page size", function () {
+            expect(res.body.data.content.length).to.be.at.most(2);
+        });
+
+        test("USER-LIST-006: Pagination element count is correct", function () {
+            expect(res.body.data.numberOfElements)
+                .to.equal(res.body.data.content.length);
+        });
+
+        test("USER-LIST-006: Pagination metadata is valid", function () {
+            expect(res.body.data.totalElements).to.be.a("number");
+            expect(res.body.data.totalPages).to.be.a("number");
+        });
+
+        test("USER-LIST-006: Response statusCode is 200", function () {
+            expect(res.body.statusCode).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

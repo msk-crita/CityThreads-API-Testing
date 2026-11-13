@@ -1,0 +1,7 @@
+info:
+  name: CREATE-USER
+  type: folder
+  seq: 2
+
+request:
+  auth: inherit

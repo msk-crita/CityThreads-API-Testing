@@ -1,0 +1,71 @@
+info:
+  name: "USER-LIST-005 — Pagination: First Page"
+  type: http
+  seq: 4
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users?page=0&size=2"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+    - name: size
+      value: "2"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("USER-LIST-005: HTTP status is 200", function () {
+            expect(res.status).to.equal(200);
+        });
+
+        test("USER-LIST-005: Request is successful", function () {
+            expect(res.body.success).to.equal(true);
+            expect(res.body.notification.exception).to.equal(false);
+        });
+
+        test("USER-LIST-005: First page is returned", function () {
+            expect(res.body.data.number).to.equal(0);
+            expect(res.body.data.first).to.equal(true);
+        });
+
+        test("USER-LIST-005: Requested page size is respected", function () {
+            expect(res.body.data.size).to.equal(2);
+        });
+
+        test("USER-LIST-005: Returned users do not exceed page size", function () {
+            expect(res.body.data.content.length).to.be.at.most(2);
+        });
+
+        test("USER-LIST-005: Number of elements matches content length", function () {
+            expect(res.body.data.numberOfElements)
+                .to.equal(res.body.data.content.length);
+        });
+
+        test("USER-LIST-005: Total elements are valid", function () {
+            expect(res.body.data.totalElements).to.be.a("number");
+            expect(res.body.data.totalElements).to.be.at.least(0);
+        });
+
+        test("USER-LIST-005: Response statusCode is 200", function () {
+            expect(res.body.statusCode).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

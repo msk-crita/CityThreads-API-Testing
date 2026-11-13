@@ -1,0 +1,81 @@
+info:
+  name: USER-LIST-002 — Missing Authorization
+  type: http
+  seq: 2
+  tags:
+    - user-controller
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users"
+  params:
+    - name: search
+      value: ""
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+    - name: size
+      value: "20"
+      type: query
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // 1. HTTP Status
+        test("USER-LIST-002: HTTP status is 401", function () {
+            expect(res.status).to.equal(401);
+        });
+
+        // 2. Success Flag
+        test("USER-LIST-002: Success flag is false", function () {
+            expect(res.body.success).to.equal(false);
+        });
+
+        // 3. Notification
+        test("USER-LIST-002: Authentication error notification is returned", function () {
+            expect(res.body.notification).to.be.an("object");
+            expect(res.body.notification.exception).to.equal(true);
+            expect(res.body.notification.exceptionMessage)
+                .to.equal("Authentication is required.");
+        });
+
+        // 4. Exception Severity
+        test("USER-LIST-002: Exception severity is returned", function () {
+            expect(res.body.notification.exceptionSeverity).to.equal("MEDIUM");
+        });
+
+        // 5. No Stack Trace Exposure
+        test("USER-LIST-002: Error response does not expose stack trace", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /stacktrace|stack trace|at\s+[\w.$]+\s*\(|Caused by:|Exception in thread/gi
+            );
+        });
+
+        // 6. No Sensitive Information Exposure
+        test("USER-LIST-002: Error response does not expose credentials or tokens", function () {
+            const responseText = JSON.stringify(res.body);
+            expect(responseText).to.not.match(
+                /password|access_token|refresh_token|challenge_token/gi
+            );
+        });
+
+        // 7. Response Status Code
+        test("USER-LIST-002: Response statusCode is 401", function () {
+            expect(res.body.statusCode).to.equal(401);
+        });
+
+        // 8. Response Timestamp
+        test("USER-LIST-002: Response timestamp is valid", function () {
+            expect(Date.parse(res.body.responseTime)).to.not.be.NaN;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,76 @@
+info:
+  name: AUTH-LOGIN-009 — Missing Device Label
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "login": "{{login}}",
+        "password": "{{password}}",
+        "client_type": "browser"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("AUTH-LOGIN-009: Login response is successful", function () {
+            expect(res.status).to.equal(200);
+
+            expect(res.body).to.be.an("object");
+
+            expect(res.body.success).to.equal(true);
+        });
+
+        test("AUTH-LOGIN-009: Authentication notification is successful", function () {
+            expect(res.body.notification).to.be.an("object");
+
+            expect(res.body.notification.exception).to.equal(false);
+
+            expect(res.body.notification.exceptionMessage).to.equal("Authentication step completed.");
+        });
+
+        test("AUTH-LOGIN-009: Authentication data is valid", function () {
+            expect(res.body.data).to.be.an("object");
+
+            expect(res.body.data.status).to.equal("AUTHENTICATED");
+
+            expect(res.body.data.role_code).to.equal("ADMIN");
+
+            expect(res.body.data.token_type).to.equal("Bearer");
+
+            expect(res.body.data.access_token).to.be.a("string");
+
+            expect(res.body.data.access_token).to.not.be.empty;
+
+            expect(res.body.data.expires_in).to.be.a("number");
+
+            expect(res.body.data.expires_in).to.be.above(0);
+        });
+
+        test("AUTH-LOGIN-009: Optional authentication fields are handled correctly", function () {
+            expect(res.body.data.challenge_token).to.equal(null);
+
+            expect(res.body.data.refresh_token).to.equal(null);
+
+            expect(res.body.data.mfa_purpose).to.equal(null);
+        });
+
+        test("AUTH-LOGIN-009: Device label omission does not prevent authentication", function () {
+            expect(res.body.success).to.equal(true);
+
+            expect(res.body.data.status).to.equal("AUTHENTICATED");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

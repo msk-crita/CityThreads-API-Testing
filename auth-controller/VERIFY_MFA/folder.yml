@@ -1,0 +1,7 @@
+info:
+  name: VERIFY_MFA
+  type: folder
+  seq: 4
+
+request:
+  auth: inherit

@@ -1,0 +1,100 @@
+info:
+  name: USER-CREATE-019 — Create User Without Authorization
+  type: http
+  seq: 19
+  tags:
+    - user-controller
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/admin/users"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "{{testUsername}}",
+        "email": "{{testEmail}}",
+        "phone": "{{testPhone}}",
+        "password": "{{testPassword}}",
+        "status": "{{testStatus}}",
+        "first_name": "{{testFirstName}}",
+        "last_name": "{{testLastName}}",
+        "job_title": "{{testJobTitle}}",
+        "role_id": {{testRoleId}}
+      }
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Get the previous counter from the active environment
+        let counter = Number(bru.getEnvVar("testUserCounter") || 0);
+
+        // Increment for every request execution
+        counter++;
+
+        // Save the updated counter
+        bru.setEnvVar("testUserCounter", String(counter));
+
+        // Generate username and email with 3-digit numbering
+        const uniqueId = String(counter).padStart(3, "0");
+        bru.setVar("testUsername", `bruno.test.user${uniqueId}`);
+        // Reuse the email address from USER-CREATE-001
+        bru.setVar("testEmail", `bruno.test.user${uniqueId}@example.com`);
+
+        // Set remaining test data
+        bru.setVar("testPhone", "9876543210");
+        bru.setVar("testPassword", "Password@123");
+        bru.setVar("testStatus", "active");
+        bru.setVar("testFirstName", "Bruno");
+        bru.setVar("testLastName", "Test");
+        bru.setVar("testJobTitle", "QA Engineer");
+        bru.setVar("testRoleId", "2");
+
+        console.log("Create User test data prepared");
+        console.log("Username:", bru.getVar("testUsername"));
+        console.log("Email:", bru.getVar("testEmail"));
+    - type: tests
+      code: |-
+        const responseText = JSON.stringify(res.body);
+
+        test("Request is rejected without authorization", function () {
+            expect(res.status).to.eql(401);
+        });
+
+        test("Success flag is false", function () {
+            expect(res.body.success).to.eql(false);
+        });
+
+        test("Notification indicates an exception", function () {
+            expect(res.body.notification.exception).to.eql(true);
+        });
+
+        test("Authentication error message is provided", function () {
+            expect(res.body.notification.exceptionMessage)
+                .to.be.a("string")
+                .and.not.empty;
+        });
+
+        test("Response does not expose stack trace", function () {
+            expect(responseText).not.to.match(
+                /stackTrace|at\s+[\w.$]+\(|org\.springframework|org\.apache\.catalina/i
+            );
+        });
+
+        test("Response does not expose sensitive credentials", function () {
+            expect(responseText).not.to.match(
+                /"(password|access_token|refresh_token|authorization)"\s*:/i
+            );
+        });
+
+        test("Response status code matches HTTP status", function () {
+            expect(res.body.statusCode).to.eql(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
